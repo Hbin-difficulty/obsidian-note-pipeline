@@ -4,7 +4,7 @@
 
 ## 这是什么
 
-一个 **WorkBuddy (CodeBuddy) Skill**，用于把一份原始文档加工成符合你笔记库规范的 Markdown 笔记。核心原则：
+一个**通用 AI 助手 Skill**，用于把一份原始文档加工成符合你笔记库规范的 Markdown 笔记。它不绑定任何特定 AI 软件，只是一份标准 `SKILL.md` + 纯 Python 3 脚本（仅 PDF 转换可选依赖 `pymupdf`），因此在 WorkBuddy、Claude Code、Codex、Cursor、Windsurf 等支持 SKILL.md / 指令文件的 AI 软件里都能直接跑。核心原则：
 
 **先判断文件类型 → 若是 `.md` 直接处理；否则先转成 Markdown（图片以 base64 内嵌），再处理。**
 
@@ -20,13 +20,18 @@
 
 ## 安装 / 使用
 
-作为 WorkBuddy **用户级 Skill**，放到：
+把整个文件夹放到你所用 AI 软件的 **skills 目录** 即可（不同软件路径见下）。无需其他配置。
 
-```
-~/.workbuddy/skills/obsidian-note-pipeline/
-```
+| Agent        | Skills 目录 |
+|--------------|-------------|
+| WorkBuddy / CodeBuddy | `~/.workbuddy/skills/obsidian-note-pipeline/`（用户级）或 `<项目>/.workbuddy/skills/obsidian-note-pipeline/`（项目级） |
+| Claude Code  | `~/.claude/skills/obsidian-note-pipeline/` 或 `<项目>/.claude/skills/obsidian-note-pipeline/` |
+| Cursor       | `<项目>/.cursor/skills/obsidian-note-pipeline/` |
+| 其他 AI 软件 | 任何该软件读取 SKILL.md / 自定义指令文件的目录 |
 
-然后在对话中说：
+如果你的 AI 软件只支持单个指令文件（而非 skills 文件夹），直接把 `SKILL.md` 的内容喂给它即可。
+
+安装后，在对话中说：
 
 - “把 `xxx.pdf` 转成 md 笔记并处理”
 - “处理一下这篇 `debug_纠错.md`”
@@ -35,11 +40,10 @@ Skill 会自动：检测类型 → 转换（如需要）→ 套用 `AGENTS.md` /
 
 ## 命令行
 
-所有脚本用隔离 venv 的 Python 运行（PyMuPDF 已装在该环境）：
+所有脚本用任意 Python 3 运行即可。PDF 转换需要 `pymupdf`（缺失时脚本会明确报错并提示 `pip install pymupdf`）；DOCX/TXT 转换是纯标准库，零额外依赖。
 
 ```bash
-PY="C:/Users/Lenovo/.workbuddy/binaries/python/envs/default/Scripts/python.exe"
-$PY scripts/run_pipeline.py "path/to/file.pdf" \
+python3 scripts/run_pipeline.py "path/to/file.pdf" \
   --title "项目开发流程" \
   --tags "AI,编程,教程,方法论,效率" \
   --summary-text "..." \
@@ -51,7 +55,7 @@ $PY scripts/run_pipeline.py "path/to/file.pdf" \
 对已有的 `.md` 笔记直接处理（跳过转换）：
 
 ```bash
-$PY scripts/run_pipeline.py "debug_纠错.md" --summary-text "..." --concepts "..."
+python3 scripts/run_pipeline.py "debug_纠错.md" --summary-text "..." --concepts "..."
 ```
 
 ## 工作原理
@@ -64,7 +68,7 @@ $PY scripts/run_pipeline.py "debug_纠错.md" --summary-text "..." --concepts ".
 ## 目录结构
 
 ```
-obslidian-note-pipeline/
+obsidian-note-pipeline/
 ├── SKILL.md                      # Skill 定义与工作流
 ├── README.md                     # 本文件
 ├── scripts/
