@@ -1,6 +1,6 @@
 ---
 name: obsidian-note-pipeline
-description: "This skill should be used when the user wants to turn a document (PDF, Word/DOCX, plain text, or an existing Markdown note) into a processed Obsidian-style Markdown note. It first detects the file type: if the file is already .md, it processes it directly; otherwise it converts the file to Markdown (PDF via PyMuPDF with inline base64 images, DOCX via pure stdlib with inline images), then applies the vault's AGENTS.md/PRD.md pipeline (frontmatter, AI summary, concept double-links, AI doubts, status fields). Use it for requests like '把这篇 PDF/Word 转成 md 笔记并处理' or any convert-and-process-a-document task."
+description: "This is a PORTABLE skill (standard SKILL.md + plain Python 3 scripts) that runs in any AI agent — WorkBuddy, Claude Code, Codex, Cursor, Windsurf, etc. Use it when the user wants to turn a document (PDF, Word/DOCX, plain text, or an existing Markdown note) into a processed Obsidian-style Markdown note. It first detects the file type: if the file is already .md, it processes it directly; otherwise it converts the file to Markdown (PDF via PyMuPDF with inline base64 images, DOCX via pure stdlib with inline images), then applies the vault's AGENTS.md/PRD.md pipeline (frontmatter, AI summary, concept double-links, AI doubts, status fields). Use it for requests like '把这篇 PDF/Word 转成 md 笔记并处理' or any convert-and-process-a-document task."
 agent_created: true
 ---
 
@@ -9,6 +9,27 @@ agent_created: true
 Turn any document into a processed Obsidian Markdown note. The defining rule:
 **detect the file type first; if it is already Markdown, process it directly;
 otherwise convert it to Markdown (with images embedded inline) and then process.**
+
+> **Portable by design.** This skill has zero dependency on any specific AI
+> runtime. The scripts are plain Python 3 (only an optional `pymupdf` for PDF),
+> and the instructions below use `python3` / `python` — no hardcoded paths.
+> Drop the folder into whichever agent's skills directory you use (see
+> *Where to install* below).
+
+## Where to install
+
+The `SKILL.md` format is shared by several agents, so just place the folder under
+that agent's skills path:
+
+| Agent        | Skills directory |
+|--------------|------------------|
+| WorkBuddy / CodeBuddy | `~/.workbuddy/skills/obsidian-note-pipeline/` (user) or `<project>/.workbuddy/skills/obsidian-note-pipeline/` (project) |
+| Claude Code  | `~/.claude/skills/obsidian-note-pipeline/` or `<project>/.claude/skills/obsidian-note-pipeline/` |
+| Cursor       | `<project>/.cursor/skills/obsidian-note-pipeline/` |
+| Other agents | Any directory your agent reads SKILL.md / custom-command files from |
+
+No other setup is required. If your agent reads a single instruction file instead
+of a skills folder, just point it at `SKILL.md`.
 
 ## When to use
 
@@ -30,9 +51,15 @@ otherwise convert it to Markdown (with images embedded inline) and then process.
 
 ### Step 2 — Convert (skip for `.md`)
 
-Run every script with the **managed venv Python** so PyMuPDF is available:
-`C:\Users\Lenovo\.workbuddy\binaries\python\envs\default\Scripts\python.exe`
-(DOCX/TXT conversion is pure stdlib, but using the venv Python uniformly is simplest).
+Run every script with **any Python 3**. PDF conversion needs `pymupdf`
+(`pip install pymupdf`); if it is missing the PDF step fails fast with a clear
+message. DOCX/TXT conversion is pure stdlib and needs no extra packages.
+
+```bash
+# pick whatever python you have
+PY=$(command -v python3 || command -v python)
+$PY scripts/run_pipeline.py "path/to/file.pdf" ...
+```
 
 - **PDF → MD** (`convert_pdf.py`): heading levels from *relative* font sizes,
   code blocks from the `Menlo` font, images embedded as base64 data URIs.
@@ -69,8 +96,7 @@ anchor `[[#heading]]`, block ref `[[#^id]]`).
 `run_pipeline.py` combines detection + conversion + processing in one call:
 
 ```bash
-PY="C:/Users/Lenovo/.workbuddy/binaries/python/envs/default/Scripts/python.exe"
-$PY scripts/run_pipeline.py "path/to/file.pdf" \
+python3 scripts/run_pipeline.py "path/to/file.pdf" \
   --title "项目开发流程" \
   --tags "AI,编程,教程,方法论,效率" \
   --summary-text "..." \
@@ -81,7 +107,7 @@ $PY scripts/run_pipeline.py "path/to/file.pdf" \
 
 For a raw `.md` note, pass it directly (conversion is skipped):
 ```bash
-$PY scripts/run_pipeline.py "debug_纠错.md" --summary-text "..." --concepts "..."
+python3 scripts/run_pipeline.py "debug_纠错.md" --summary-text "..." --concepts "..."
 ```
 
 If you already converted separately, call `process_note.py` on the `.md` directly.
